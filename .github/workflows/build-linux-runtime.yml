@@ -20,7 +20,24 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            poppler-utils tesseract-ocr
+            autoconf automake ca-certificates g++ libtool \
+            libleptonica-dev make pkg-config poppler-utils curl
+
+      - name: Build the matching Tesseract binary
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            --output /tmp/tesseract-5.5.2.tar.gz \
+            https://github.com/tesseract-ocr/tesseract/archive/refs/tags/5.5.2.tar.gz
+          tar -xzf /tmp/tesseract-5.5.2.tar.gz -C /tmp
+          cd /tmp/tesseract-5.5.2
+          ./autogen.sh
+          ./configure --prefix=/opt/pdf-extractor-tesseract --disable-openmp
+          make -j"$(nproc)"
+          sudo make install
+          sudo ldconfig
+          LD_LIBRARY_PATH=/opt/pdf-extractor-tesseract/lib \
+            /opt/pdf-extractor-tesseract/bin/tesseract --version | grep -F 'tesseract 5.5.2'
 
       - name: Build the bundled Python OCR worker
         run: |
@@ -39,15 +56,17 @@ jobs:
           PACKAGE_ROOT="$PWD/build/package/pdf-extractor-linux-x64"
           mkdir -p "$PACKAGE_ROOT/worker" "$PACKAGE_ROOT/tools/lib"
           cp -a build/dist/odpc-ocr-worker/. "$PACKAGE_ROOT/worker/"
-          cp /usr/bin/tesseract /usr/bin/pdftoppm /usr/bin/pdfinfo "$PACKAGE_ROOT/tools/"
+          cp /opt/pdf-extractor-tesseract/bin/tesseract "$PACKAGE_ROOT/tools/tesseract"
+          cp /usr/bin/pdftoppm /usr/bin/pdfinfo "$PACKAGE_ROOT/tools/"
           mkdir -p "$PACKAGE_ROOT/tools/tessdata"
           cp runtime-src/tessdata/eng.traineddata "$PACKAGE_ROOT/tools/tessdata/eng.traineddata"
+          cp -a /opt/pdf-extractor-tesseract/lib/libtesseract.so* "$PACKAGE_ROOT/tools/lib/"
           copy_libraries() {
-            ldd "$1" | awk '/=> \/(lib|usr\/lib)/ {print $3} /^\/(lib|usr\/lib)/ {print $1}' | while read -r library; do
+            LD_LIBRARY_PATH=/opt/pdf-extractor-tesseract/lib ldd "$1" | awk '/=> \/(lib|usr\/lib|opt)/ {print $3} /^\/(lib|usr\/lib|opt)/ {print $1}' | while read -r library; do
               [ -f "$library" ] && cp -L -n "$library" "$PACKAGE_ROOT/tools/lib/" || true
             done
           }
-          copy_libraries /usr/bin/tesseract
+          copy_libraries /opt/pdf-extractor-tesseract/bin/tesseract
           copy_libraries /usr/bin/pdftoppm
           copy_libraries /usr/bin/pdfinfo
           cat > "$PACKAGE_ROOT/run-worker" <<'EOF'
@@ -63,6 +82,8 @@ jobs:
           chmod +x "$PACKAGE_ROOT/run-worker"
           "$PACKAGE_ROOT/run-worker" health | tee build/linux-health.json
           grep -q '"offline_ocr_ready": true' build/linux-health.json
+          LD_LIBRARY_PATH="$PACKAGE_ROOT/tools/lib" \
+            "$PACKAGE_ROOT/tools/tesseract" --version | grep -F 'tesseract 5.5.2'
           tar -C build/package -czf build/PDF-Extractor-linux-x64.tar.gz pdf-extractor-linux-x64
           (
             cd build

@@ -37,4 +37,4 @@ Version `v0.3.0` must contain the GitHub Release asset `PDF-Extractor-macOS-arm6
 213acbd6803492b645a0b65cb723aad13085275d0fe78ac805e495718eb7dcbf
 ```
 
-安装器会校验该 SHA-256。Linux 构建使用与 macOS 包相同 SHA-256 的 `eng.traineddata` 英文语言模型，模型清单见 [runtime-src/MODEL_MANIFEST.json](runtime-src/MODEL_MANIFEST.json)。不应改用系统安装的 Tesseract 或其他 OCR 模型，否则无法保证同等效果。不同操作系统的 OCR 原生二进制不能承诺逐字节完全相同，发布前必须分别完成样本文档验收。完整组件说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+安装器会校验该 SHA-256。Linux 构建使用与 macOS 包相同的 Tesseract `5.5.2`，以及相同 SHA-256 的 `eng.traineddata` 英文语言模型；模型清单见 [runtime-src/MODEL_MANIFEST.json](runtime-src/MODEL_MANIFEST.json)。不应改用系统安装的 Tesseract 或其他 OCR 模型，否则无法保证同等效果。不同操作系统的 OCR 原生二进制不能承诺逐字节完全相同，发布前必须分别完成样本文档验收。完整组件说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
