@@ -29,9 +29,9 @@ mkdir -p "$INSTALL_ROOT"
 rm -rf "$APP_PATH"
 ditto -x -k "$TEMP_DIR/$ASSET" "$INSTALL_ROOT"
 xattr -dr com.apple.quarantine "$APP_PATH" 2>/dev/null || true
-WORKER="$APP_PATH/Contents/Resources/worker/odpc-ocr-worker"
+WORKER="$APP_PATH/Contents/MacOS/odpc-ocr-worker"
 if [[ ! -x "$WORKER" ]]; then
-  echo "Installed archive is missing its OCR worker." >&2
+  echo "Installed archive is missing its bundled OCR launcher." >&2
   exit 1
 fi
 "$WORKER" health

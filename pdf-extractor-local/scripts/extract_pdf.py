@@ -18,7 +18,9 @@ def runtime_worker() -> Path:
         worker = Path(explicit).expanduser().resolve()
     else:
         root = Path(os.environ.get("PDF_EXTRACTOR_RUNTIME_ROOT", "~/.local/share/pdf-extractor")).expanduser()
-        worker = root / "PDF 提取器.app/Contents/Resources/worker/odpc-ocr-worker"
+        # Use the app launcher rather than the raw worker. The launcher pins
+        # Tesseract to the copy bundled in the verified release archive.
+        worker = root / "PDF 提取器.app/Contents/MacOS/odpc-ocr-worker"
     if not worker.is_file() or not os.access(worker, os.X_OK):
         raise RuntimeError("Local runtime is missing. Run install-runtime-macos.sh first.")
     return worker
