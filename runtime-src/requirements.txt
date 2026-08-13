@@ -1,0 +1,8 @@
+Pillow==12.1.1
+certifi==2026.7.22
+pypdf==6.15.0
+pypdfium2==5.12.1
+reportlab==4.4.10
+rapidocr==3.9.2
+onnxruntime==1.23.2
+pyinstaller==6.22.0

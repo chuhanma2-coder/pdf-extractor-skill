@@ -9,8 +9,8 @@ Use the bundled local runtime. Do not upload the PDF, send it to cloud OCR, or s
 
 ## Run
 
-1. Confirm the runtime is present by running `scripts/verify-runtime-macos.sh`.
-2. If it is missing, run `scripts/install-runtime-macos.sh`. It downloads the signed release archive from this repository and verifies its SHA-256 before unpacking.
+1. Confirm the runtime for the current platform is present by running `bash ../../install.sh` when needed.
+2. `install.sh` selects the verified Apple Silicon macOS or Linux x86_64 runtime. It downloads the fixed release archive and verifies its SHA-256 before unpacking.
 3. Run `scripts/extract_pdf.py --output-dir <directory> <pdf-path> [...]`.
 4. Read the JSON summary printed by the script and report the `exports` paths. Do not claim a scan is error-free when `open_issues` is nonzero.
 

@@ -4,7 +4,7 @@
 
 ## 适用边界
 
-- 已发布并验证：Apple Silicon macOS（M1、M2、M3、M4）。
+- 已发布并验证：Apple Silicon macOS（M1、M2、M3、M4）和 Linux x86_64。
 - 需要 Agent 具备本机终端和本地文件读写权限，例如 Codex CLI/Desktop、Claude Code、Cursor、Trae、VS Code Agent 或其他可运行 Shell/Python 的本地 Agent。
 - 仅网页对话、没有本机终端权限的 Agent，不能安装或运行本地 OCR；把 PDF 上传到这类网页产品也不等于它能调用本 Skill。
 - Windows、Intel Mac 在对应运行包完成构建与实测前不支持。不要用不同 OCR 工具替代，否则质量无法保证一致。
@@ -19,7 +19,7 @@ cd pdf-extractor-skill
 bash install.sh
 ```
 
-安装器只下载 GitHub Release 中固定版本的 Apple Silicon macOS 运行包，并先校验 SHA-256。运行包内已包含 PDFium、RapidOCR、ONNX Runtime、RapidOCR 模型、Tesseract、英文模型和导出逻辑；无需另装 Python OCR 库、Tesseract 或模型。
+安装器会自动选择 GitHub Release 中固定版本的 Apple Silicon macOS 或 Linux x86_64 运行包，并先校验 SHA-256。两个运行包都包含 PDFium、RapidOCR、ONNX Runtime、RapidOCR 模型、Tesseract、英文模型和导出逻辑；无需另装 Python OCR 库、Tesseract 或模型。
 
 提取命令：
 

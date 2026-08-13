@@ -1,0 +1,84 @@
+name: Build Linux OCR runtime
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux-x64:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install fixed OCR system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            poppler-utils tesseract-ocr
+
+      - name: Build the bundled Python OCR worker
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r runtime-src/requirements.txt
+          pyinstaller --noconfirm --clean --onedir \
+            --distpath build/dist --workpath build/work --specpath build/spec \
+            --name odpc-ocr-worker \
+            --collect-all rapidocr --collect-all onnxruntime --collect-all pypdfium2 \
+            runtime-src/worker_main.py
+
+      - name: Assemble the portable Linux package
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACKAGE_ROOT="$PWD/build/package/pdf-extractor-linux-x64"
+          mkdir -p "$PACKAGE_ROOT/worker" "$PACKAGE_ROOT/tools/lib"
+          cp -a build/dist/odpc-ocr-worker/. "$PACKAGE_ROOT/worker/"
+          cp /usr/bin/tesseract /usr/bin/pdftoppm /usr/bin/pdfinfo "$PACKAGE_ROOT/tools/"
+          mkdir -p "$PACKAGE_ROOT/tools/tessdata"
+          cp runtime-src/tessdata/eng.traineddata "$PACKAGE_ROOT/tools/tessdata/eng.traineddata"
+          copy_libraries() {
+            ldd "$1" | awk '/=> \/(lib|usr\/lib)/ {print $3} /^\/(lib|usr\/lib)/ {print $1}' | while read -r library; do
+              [ -f "$library" ] && cp -L -n "$library" "$PACKAGE_ROOT/tools/lib/" || true
+            done
+          }
+          copy_libraries /usr/bin/tesseract
+          copy_libraries /usr/bin/pdftoppm
+          copy_libraries /usr/bin/pdfinfo
+          cat > "$PACKAGE_ROOT/run-worker" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          RUNTIME_ROOT="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+          export ODPC_TOOLS_DIR="$RUNTIME_ROOT/tools"
+          export ODPC_TESSERACT_PATH="$RUNTIME_ROOT/tools/tesseract"
+          export TESSDATA_PREFIX="$RUNTIME_ROOT/tools/tessdata"
+          export LD_LIBRARY_PATH="$RUNTIME_ROOT/tools/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          exec "$RUNTIME_ROOT/worker/odpc-ocr-worker" "$@"
+          EOF
+          chmod +x "$PACKAGE_ROOT/run-worker"
+          "$PACKAGE_ROOT/run-worker" health | tee build/linux-health.json
+          grep -q '"offline_ocr_ready": true' build/linux-health.json
+          tar -C build/package -czf build/PDF-Extractor-linux-x64.tar.gz pdf-extractor-linux-x64
+          sha256sum build/PDF-Extractor-linux-x64.tar.gz > build/PDF-Extractor-linux-x64.sha256
+
+      - name: Retain build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PDF-Extractor-linux-x64
+          path: |
+            build/PDF-Extractor-linux-x64.tar.gz
+            build/PDF-Extractor-linux-x64.sha256
+
+      - name: Publish to the fixed runtime release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload v0.3.0 \
+            build/PDF-Extractor-linux-x64.tar.gz \
+            build/PDF-Extractor-linux-x64.sha256 \
+            --clobber --repo "$GITHUB_REPOSITORY"
