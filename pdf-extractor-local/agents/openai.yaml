@@ -1,0 +1,4 @@
+interface:
+  display_name: "PDF 提取器（本地离线）"
+  short_description: "本机离线提取普通 PDF 与扫描件的完整文本及导出文件。"
+  default_prompt: "Use $pdf-extractor-local to extract this local PDF and export the complete results."
