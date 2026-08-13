@@ -1,0 +1,6 @@
+---
+description: Use the verified local PDF extraction runtime for ordinary and scanned PDFs.
+alwaysApply: false
+---
+
+Read `AGENTS.md` and `pdf-extractor-local/SKILL.md`. Run `bash install.sh` before first use. Do not replace the bundled OCR models or binaries, and do not upload PDFs to cloud OCR.
